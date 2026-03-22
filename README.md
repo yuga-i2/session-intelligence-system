@@ -7,7 +7,13 @@
 
 ```bash
 pip install -r requirements.txt
+
+# run the full pipeline + generate predictions.csv
 python arvyax_system.py
+
+# OR run the local API
+uvicorn app:app --reload
+# → http://localhost:8000/docs
 ```
 
 Outputs `predictions.csv` with all 120 test predictions. No internet required. Runs fully locally.
@@ -35,6 +41,7 @@ messy journal text + context signals
 | File | Purpose |
 |---|---|
 | `arvyax_system.py` | Full pipeline — run this |
+| `app.py` | FastAPI local inference API |
 | `predictions.csv` | Output: 120 test predictions |
 | `README.md` | This file |
 | `ERROR_ANALYSIS.md` | 10 failure cases with honest analysis |
@@ -129,6 +136,43 @@ Summary: compress RF to 50 trees + ONNX int8 → ~2–3 MB, <150ms on mid-range 
 | Contradictory inputs | `contradiction_score` feature fires → often routes to `grounding` |
 | Missing face signal | `no_face_signal` uncertainty reason → confidence penalty |
 | Conflicting text + metadata | Confidence drops; system reports uncertainty rather than forcing a prediction |
+
+---
+
+## Local API (Bonus)
+
+```bash
+uvicorn app:app --reload
+```
+
+Then open **http://localhost:8000/docs** for the interactive Swagger UI.
+
+**Single prediction:**
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "journal_text": "I feel lighter after the session but pressure is still there.",
+    "stress_level": 4,
+    "energy_level": 2,
+    "time_of_day": "morning",
+    "ambience_type": "forest"
+  }'
+```
+
+**Response:**
+```json
+{
+  "predicted_state": "mixed",
+  "predicted_intensity": 3,
+  "confidence": 0.41,
+  "uncertain_flag": 1,
+  "what_to_do": "grounding",
+  "when_to_do": "within_15_min",
+  "supportive_message": "Two things feel true at once — that's okay. Try one slow physical action before deciding anything.",
+  "uncertainty_reasons": ["no_face_signal"]
+}
+```
 
 ---
 
